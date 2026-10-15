@@ -2,6 +2,7 @@ using TaskTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using TaskTracker.Api.Data;
 using TaskTracker.Api.Models;
+using TaskTracker.Api.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,38 +32,50 @@ if (app.Environment.IsDevelopment())
 
 
 
+
 app.MapGet("/tasks", async (ITaskService service) =>
 {
     var tasks = await service.GetAllAsync();
     return Results.Ok(tasks);
 });
 
-app.MapPost("/tasks", async (TaskItem task, ITaskService service) =>
+app.MapPost("/tasks", async (
+    CreateTaskRequest request,
+    ITaskService service) =>
 {
-    var createdTask = await service.CreateAsync(task);
+    var createdTask = await service.CreateAsync(request);
 
-    return Results.Created($"/tasks/{createdTask.Id}", createdTask);
+    return Results.Created(
+        $"/tasks/{createdTask.Id}",
+        createdTask);
 });
 
-app.MapGet("/tasks/{id:int}", async (int id, ITaskService service) =>
+app.MapGet("/tasks/{id:int}", async (
+    int id,
+    ITaskService service) =>
 {
     var task = await service.GetByIdAsync(id);
 
-    return task is null
-        ? Results.NotFound()
-        : Results.Ok(task);
+    return task is not null
+        ? Results.Ok(task)
+        : Results.NotFound();
 });
 
-app.MapPut("/tasks/{id:int}", async (int id, TaskItem updatedTask, ITaskService service) =>
+app.MapPut("/tasks/{id:int}", async (
+    int id,
+    UpdateTaskRequest request,
+    ITaskService service) =>
 {
-    var updated = await service.UpdateAsync(id, updatedTask);
+    var updated = await service.UpdateAsync(id, request);
 
     return updated
         ? Results.NoContent()
         : Results.NotFound();
 });
 
-app.MapDelete("/tasks/{id:int}", async (int id, ITaskService service) =>
+app.MapDelete("/tasks/{id:int}", async (
+    int id,
+    ITaskService service) =>
 {
     var deleted = await service.DeleteAsync(id);
 

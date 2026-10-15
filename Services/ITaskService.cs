@@ -1,17 +1,17 @@
 
-using TaskTracker.Api.Models;
+using TaskTracker.Api.Dtos;
 
 namespace TaskTracker.Api.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItem>> GetAllAsync();
+    Task<List<TaskResponse>> GetAllAsync();
 
-    Task<TaskItem?> GetByIdAsync(int id);
+    Task<TaskResponse?> GetByIdAsync(int id);
 
-    Task<TaskItem> CreateAsync(TaskItem task);
+    Task<TaskResponse> CreateAsync(CreateTaskRequest request);
 
-    Task<bool> UpdateAsync(int id, TaskItem updatedTask);
+    Task<bool> UpdateAsync(int id, UpdateTaskRequest request);
 
     Task<bool> DeleteAsync(int id);
 }
