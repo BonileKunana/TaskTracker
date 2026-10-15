@@ -1,3 +1,4 @@
+using TaskTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using TaskTracker.Api.Data;
 using TaskTracker.Api.Models;
@@ -12,6 +13,7 @@ var connectionString =
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddScoped<ITaskService, TaskService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -27,66 +29,49 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
 
-app.MapGet("/tasks", async (TaskDbContext db) =>
+app.MapGet("/tasks", async (ITaskService service) =>
 {
-    var tasks = await db.Tasks.ToListAsync();
+    var tasks = await service.GetAllAsync();
     return Results.Ok(tasks);
 });
 
-app.MapPost("/tasks", async (TaskItem task, TaskDbContext db) =>
+app.MapPost("/tasks", async (TaskItem task, ITaskService service) =>
 {
-    db.Tasks.Add(task);
-    await db.SaveChangesAsync();
+    var createdTask = await service.CreateAsync(task);
 
-    return Results.Created($"/tasks/{task.Id}", task);
+    return Results.Created($"/tasks/{createdTask.Id}", createdTask);
 });
 
-app.MapGet("/tasks/{id:int}", async (int id, TaskDbContext db) =>
+app.MapGet("/tasks/{id:int}", async (int id, ITaskService service) =>
 {
-    var task = await db.Tasks.FindAsync(id);
+    var task = await service.GetByIdAsync(id);
 
     return task is null
         ? Results.NotFound()
         : Results.Ok(task);
 });
 
-app.MapPut("/tasks/{id:int}", async (int id, TaskItem updatedTask, TaskDbContext db) =>
+app.MapPut("/tasks/{id:int}", async (int id, TaskItem updatedTask, ITaskService service) =>
 {
-    var task = await db.Tasks.FindAsync(id);
+    var updated = await service.UpdateAsync(id, updatedTask);
 
-    if (task is null)
-        return Results.NotFound();
-
-    task.Title = updatedTask.Title;
-    task.IsCompleted = updatedTask.IsCompleted;
-
-    await db.SaveChangesAsync();
-
-    return Results.Ok(task);
+    return updated
+        ? Results.NoContent()
+        : Results.NotFound();
 });
 
-app.MapDelete("/tasks/{id:int}", async (int id, TaskDbContext db) =>
+app.MapDelete("/tasks/{id:int}", async (int id, ITaskService service) =>
 {
-    var task = await db.Tasks.FindAsync(id);
+    var deleted = await service.DeleteAsync(id);
 
-    if (task is null)
-        return Results.NotFound();
-
-    db.Tasks.Remove(task);
-    await db.SaveChangesAsync();
-
-    return Results.NoContent();
+    return deleted
+        ? Results.NoContent()
+        : Results.NotFound();
 });
+
+
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+
