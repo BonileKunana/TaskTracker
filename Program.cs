@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskTracker.Api.Data;
 using TaskTracker.Api.Models;
 using TaskTracker.Api.Dtos;
+using TaskTracker.Api.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,16 +40,25 @@ app.MapGet("/tasks", async (ITaskService service) =>
     return Results.Ok(tasks);
 });
 
+
 app.MapPost("/tasks", async (
     CreateTaskRequest request,
     ITaskService service) =>
 {
+    var errors = DtoValidator.Validate(request);
+
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
     var createdTask = await service.CreateAsync(request);
 
     return Results.Created(
         $"/tasks/{createdTask.Id}",
         createdTask);
 });
+
 
 app.MapGet("/tasks/{id:int}", async (
     int id,
@@ -61,17 +71,26 @@ app.MapGet("/tasks/{id:int}", async (
         : Results.NotFound();
 });
 
+
 app.MapPut("/tasks/{id:int}", async (
     int id,
     UpdateTaskRequest request,
     ITaskService service) =>
 {
+    var errors = DtoValidator.Validate(request);
+
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
     var updated = await service.UpdateAsync(id, request);
 
     return updated
         ? Results.NoContent()
         : Results.NotFound();
 });
+
 
 app.MapDelete("/tasks/{id:int}", async (
     int id,
