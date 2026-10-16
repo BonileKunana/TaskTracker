@@ -20,10 +20,39 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionFeature =
+            context.Features.Get<
+                Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
 
+        var logger = context.RequestServices
+            .GetRequiredService<ILogger<Program>>();
+
+        if (exceptionFeature?.Error is not null)
+        {
+            logger.LogError(
+                exceptionFeature.Error,
+                "An unhandled exception occurred while processing the request.");
+        }
+
+        context.Response.StatusCode =
+            StatusCodes.Status500InternalServerError;
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "An unexpected error occurred."
+        });
+    });
+});
+
+app.MapHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -106,4 +135,4 @@ app.MapDelete("/tasks/{id:int}", async (
 
 app.Run();
 
-
+public partial class Program { }
