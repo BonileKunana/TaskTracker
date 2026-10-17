@@ -25,7 +25,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("TaskTrackerFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5500")
+            .WithOrigins(
+                "http://localhost:5500",
+                "https://tasktracker-web-kjg6.onrender.com")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
