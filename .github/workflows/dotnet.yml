@@ -16,15 +16,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check installed .NET SDK
+        shell: cmd
         run: dotnet --list-sdks
         
           
 
       - name: Restore dependencies
+        shell: cmd
         run: dotnet restore TaskTracker.Api.Tests/TaskTracker.Api.Tests.csproj
 
       - name: Build
+        shell: cmd
         run: dotnet build TaskTracker.Api.Tests/TaskTracker.Api.Tests.csproj --configuration Release --no-restore
 
       - name: Run tests
+        shell: cmd
         run: dotnet test TaskTracker.Api.Tests/TaskTracker.Api.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
