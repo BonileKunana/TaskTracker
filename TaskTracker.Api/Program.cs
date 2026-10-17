@@ -20,6 +20,17 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("TaskTrackerFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5500")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services
     .AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
@@ -30,6 +41,8 @@ builder.Logging.AddFilter(
     LogLevel.Information);
 
 var app = builder.Build();
+
+app.UseCors("TaskTrackerFrontend");
 
 app.UseExceptionHandler(errorApp =>
 {
