@@ -25,15 +25,9 @@ public class TaskApiIntegrationTests
     {
         builder.UseEnvironment("Development");
 
-        builder.ConfigureAppConfiguration((context, config) =>
-        {
-            config.AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:DefaultConnection"] =
-                        "Host=localhost;Database=test;Username=test;Password=test"
-                });
-        });
+        builder.UseSetting(
+        "ConnectionStrings:DefaultConnection",
+        "Host=localhost;Database=test;Username=test;Password=test");
 
         builder.ConfigureServices(services =>
         {
