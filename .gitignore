@@ -5,3 +5,5 @@ obj/
 .env.*
 !.env.example
 appsettings.Development.json
+
+actions-runner/
