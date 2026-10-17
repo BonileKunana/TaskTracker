@@ -1,9 +1,10 @@
+
 using TaskTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using TaskTracker.Api.Data;
-using TaskTracker.Api.Models;
 using TaskTracker.Api.Dtos;
 using TaskTracker.Api.Validation;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,12 +18,18 @@ builder.Services.AddDbContext<TaskDbContext>(options =>
 
 builder.Services.AddScoped<ITaskService, TaskService>();
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
 builder.Services
     .AddHealthChecks()
-    .AddDbContextCheck<TaskDbContext>("database");
+    .AddDbContextCheck<TaskDbContext>(
+        "database",
+        failureStatus: HealthStatus.Unhealthy);
+
+// Log health-check failures without returning sensitive details to callers.
+builder.Logging.AddFilter(
+    "Microsoft.Extensions.Diagnostics.HealthChecks",
+    LogLevel.Information);
 
 var app = builder.Build();
 
@@ -54,43 +61,38 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
+app.MapHealthChecks(
+    "/health",
+    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
     {
-        context.Response.ContentType = "application/json";
-
-        var result = System.Text.Json.JsonSerializer.Serialize(new
+        ResponseWriter = async (context, report) =>
         {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(entry => new
+            context.Response.ContentType = "application/json";
+
+            var result = System.Text.Json.JsonSerializer.Serialize(new
             {
-                name = entry.Key,
-                status = entry.Value.Status.ToString(),
-                description = entry.Value.Description,
-                exception = entry.Value.Exception?.Message
-            })
-        });
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(entry => new
+                {
+                    name = entry.Key,
+                    status = entry.Value.Status.ToString()
+                })
+            });
 
-        await context.Response.WriteAsync(result);
-    }
-});
+            await context.Response.WriteAsync(result);
+        }
+    });
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-
-
 
 app.MapGet("/tasks", async (ITaskService service) =>
 {
     var tasks = await service.GetAllAsync();
     return Results.Ok(tasks);
 });
-
 
 app.MapPost("/tasks", async (
     CreateTaskRequest request,
@@ -110,7 +112,6 @@ app.MapPost("/tasks", async (
         createdTask);
 });
 
-
 app.MapGet("/tasks/{id:int}", async (
     int id,
     ITaskService service) =>
@@ -121,7 +122,6 @@ app.MapGet("/tasks/{id:int}", async (
         ? Results.Ok(task)
         : Results.NotFound();
 });
-
 
 app.MapPut("/tasks/{id:int}", async (
     int id,
@@ -142,7 +142,6 @@ app.MapPut("/tasks/{id:int}", async (
         : Results.NotFound();
 });
 
-
 app.MapDelete("/tasks/{id:int}", async (
     int id,
     ITaskService service) =>
@@ -153,7 +152,6 @@ app.MapDelete("/tasks/{id:int}", async (
         ? Results.NoContent()
         : Results.NotFound();
 });
-
 
 app.Run();
 
