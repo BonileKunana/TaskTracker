@@ -22,9 +22,7 @@ builder.Services.AddOpenApi();
 
 builder.Services
     .AddHealthChecks()
-    .AddDbContextCheck<TaskDbContext>(
-        "database",
-        failureStatus: HealthStatus.Unhealthy);
+    .AddCheck<DatabaseHealthCheck>("database");
 
 // Log health-check failures without returning sensitive details to callers.
 builder.Logging.AddFilter(
@@ -156,3 +154,49 @@ app.MapDelete("/tasks/{id:int}", async (
 app.Run();
 
 public partial class Program { }
+
+public sealed class DatabaseHealthCheck : IHealthCheck
+{
+    private readonly TaskDbContext _db;
+    private readonly ILogger<DatabaseHealthCheck> _logger;
+
+    public DatabaseHealthCheck(
+        TaskDbContext db,
+        ILogger<DatabaseHealthCheck> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var canConnect =
+                await _db.Database.CanConnectAsync(cancellationToken);
+
+            if (canConnect)
+            {
+                return HealthCheckResult.Healthy();
+            }
+
+            _logger.LogError(
+                "Database health check failed: PostgreSQL connection returned false.");
+
+            return HealthCheckResult.Unhealthy(
+                "Database connection failed.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                "Database health check failed. Exception type: {ExceptionType}; Message: {ExceptionMessage}",
+                ex.GetType().Name,
+                ex.Message);
+
+            return HealthCheckResult.Unhealthy(
+                "Database connection failed.");
+        }
+    }
+}
