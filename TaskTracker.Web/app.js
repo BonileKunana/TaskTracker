@@ -1,8 +1,9 @@
 
-const API_URL = "http://localhost:8080/tasks";
+const API_URL = "https://tasktracker-0wki.onrender.com/tasks";
 
 const taskForm = document.getElementById("task-form");
 const taskTitle = document.getElementById("task-title");
+const taskDescription = document.getElementById("task-description");
 const taskList = document.getElementById("task-list");
 const taskCount = document.getElementById("task-count");
 const message = document.getElementById("message");
@@ -17,10 +18,9 @@ async function loadTasks() {
 
         const tasks = await response.json();
         renderTasks(tasks);
-        message.textContent = "";
     } catch (error) {
         message.textContent =
-            "Could not connect to the API. Check that Docker is running.";
+            "Could not connect to the API. Check the API URL and availability.";
         taskCount.textContent = "Tasks unavailable";
     }
 }
@@ -45,12 +45,29 @@ function renderTasks(tasks) {
         checkbox.setAttribute("aria-label", `Complete ${task.title}`);
 
         checkbox.addEventListener("change", async () => {
-            await updateTask(task.id, task.title, checkbox.checked);
+            await updateTask(
+                task.id,
+                task.title,
+                task.description ?? "",
+                checkbox.checked
+            );
         });
+
+        const details = document.createElement("div");
+        details.className = "task-details";
 
         const title = document.createElement("span");
         title.className = "task-title";
         title.textContent = task.title;
+
+        details.appendChild(title);
+
+        if (task.description) {
+            const description = document.createElement("p");
+            description.className = "task-description";
+            description.textContent = task.description;
+            details.appendChild(description);
+        }
 
         const actions = document.createElement("div");
         actions.className = "task-actions";
@@ -64,12 +81,32 @@ function renderTasks(tasks) {
 
             if (newTitle === null) return;
 
-            if (!newTitle.trim()) {
-                message.textContent = "Task title cannot be empty.";
+            if (newTitle.trim().length < 3 ||
+                newTitle.trim().length > 100) {
+                message.textContent =
+                    "Title must be between 3 and 100 characters.";
                 return;
             }
 
-            await updateTask(task.id, newTitle.trim(), task.isCompleted);
+            const newDescription = prompt(
+                "Edit task description:",
+                task.description ?? ""
+            );
+
+            if (newDescription === null) return;
+
+            if (newDescription.length > 500) {
+                message.textContent =
+                    "Description cannot exceed 500 characters.";
+                return;
+            }
+
+            await updateTask(
+                task.id,
+                newTitle.trim(),
+                newDescription.trim(),
+                task.isCompleted
+            );
         });
 
         const deleteButton = document.createElement("button");
@@ -83,7 +120,7 @@ function renderTasks(tasks) {
         });
 
         actions.append(editButton, deleteButton);
-        item.append(checkbox, title, actions);
+        item.append(checkbox, details, actions);
         taskList.appendChild(item);
     }
 }
@@ -92,9 +129,17 @@ taskForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const title = taskTitle.value.trim();
+    const description = taskDescription.value.trim();
 
-    if (!title) {
-        message.textContent = "Please enter a task title.";
+    if (title.length < 3 || title.length > 100) {
+        message.textContent =
+            "Title must be between 3 and 100 characters.";
+        return;
+    }
+
+    if (description.length > 500) {
+        message.textContent =
+            "Description cannot exceed 500 characters.";
         return;
     }
 
@@ -103,7 +148,8 @@ taskForm.addEventListener("submit", async (event) => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                title: title,
+                title,
+                description,
                 isCompleted: false
             })
         });
@@ -113,6 +159,7 @@ taskForm.addEventListener("submit", async (event) => {
         }
 
         taskTitle.value = "";
+        taskDescription.value = "";
         message.textContent = "Task added successfully.";
         await loadTasks();
     } catch (error) {
@@ -120,12 +167,16 @@ taskForm.addEventListener("submit", async (event) => {
     }
 });
 
-async function updateTask(id, title, isCompleted) {
+async function updateTask(id, title, description, isCompleted) {
     try {
         const response = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, isCompleted })
+            body: JSON.stringify({
+                title,
+                description,
+                isCompleted
+            })
         });
 
         if (!response.ok) {

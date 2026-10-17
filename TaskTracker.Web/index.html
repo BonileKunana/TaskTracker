@@ -19,8 +19,15 @@
             <input type="text"
                    id="task-title"
                    placeholder="What needs to be done?"
-                   maxlength="200"
+                   maxlength="100"
+                   minlength="3"
                    required>
+
+            <textarea id="task-description"
+                      placeholder="Description (optional)"
+                      maxlength="500"
+                      rows="3"></textarea>
+
             <button type="submit">Add Task</button>
         </form>
 

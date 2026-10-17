@@ -128,3 +128,30 @@ button {
         flex-wrap: wrap;
     }
 }
+
+#task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#task-description {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+}
+
+.task-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-description {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
