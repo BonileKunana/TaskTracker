@@ -20,7 +20,9 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<TaskDbContext>("database");
 
 var app = builder.Build();
 

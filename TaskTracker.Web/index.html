@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Task Tracker</h1>
+            <p>Organise your work, one task at a time.</p>
+        </header>
+
+        <form id="task-form">
+            <input type="text"
+                   id="task-title"
+                   placeholder="What needs to be done?"
+                   maxlength="200"
+                   required>
+            <button type="submit">Add Task</button>
+        </form>
+
+        <p id="message" role="status"></p>
+
+        <section class="task-section">
+            <h2>Your Tasks</h2>
+            <p id="task-count">Loading tasks...</p>
+            <ul id="task-list"></ul>
+        </section>
+    </main>
+</body>
+</html>
